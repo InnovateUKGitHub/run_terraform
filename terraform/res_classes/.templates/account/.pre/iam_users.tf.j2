@@ -1,0 +1,26 @@
+# {{ terraform_template.managed }}
+
+{% for iam_user in tfvars.iam_users %}
+#### Resources for IAM user {{ iam_user }}
+resource "aws_iam_user" "{{ iam_user |md5 }}" {
+  name          = "{{ iam_user }}"
+  force_destroy = "${var.iam_user_force_destroy}"
+
+  # See https://github.com/hashicorp/terraform/issues/8621
+  provisioner "local-exec" {
+    when    = "destroy"
+    command = "aws iam delete-login-profile --user-name {{ iam_user }}"
+  }
+}
+
+resource "aws_iam_user_login_profile" "{{ iam_user |md5 }}" {
+  user    = "${aws_iam_user.{{ iam_user |md5 }}.name}"
+  pgp_key = "keybase:${var.trusted_pgp_user}"
+}
+
+resource "aws_iam_access_key" "{{ iam_user |md5 }}" {
+  user  = "${aws_iam_user.{{ iam_user |md5 }}.name}"
+}
+
+####
+{% endfor %}

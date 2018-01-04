@@ -1,0 +1,38 @@
+---
+pre_terraform:
+  enable: true
+  clean_before_use: true
+  source_directory: .pre
+  source_file_suffix: .tf.j2
+  dest_directory: ..
+  dest_file_prefix: '_pre_'
+  dest_file_suffix: '_override.tf'
+
+terraform_template:
+  managed: This file is autocreated by run_terraform DO NOT EDIT directly.
+  org_prefix: org
+  table_name: terraform_locks
+  encrypt_state: "false"
+  bucket_suffix: terraform-state
+  max_lock_retries: 360
+
+terraform:
+  enforce_version: v0.11
+  executable: terraform
+  skip_get: true
+  init_fixed_params: -input=false -reconfigure -force-copy -backend=true -get=true -lock=true
+  force_refresh: false
+  backend_template_filename: ../../../etc/backend.tfvars.j2
+  backend_varsfile_suffix: backend.tfvars
+  vars_dir: ../../vars
+  directory: terraform
+  res_class_base_directory: terraform/res_classes
+  parallelism: 10
+  backend_dir: .terraform
+  public_key_name: deploy
+  public_key_path: ~/.ssh/id_rsa.pub
+  validation_hashes:
+    - aws_profiles
+    - aws_regions
+    - deploy_env_prefixes
+    - res_classes

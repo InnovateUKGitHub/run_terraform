@@ -1,0 +1,160 @@
+#!/usr/bin/env python2.7
+"""
+Usage:
+    tfadmin (--help | -h)
+    tfadmin (--version | -v)
+    tfadmin list aws_regions
+    tfadmin list aws_profiles
+    tfadmin list res_classes
+    tfadmin list deploy_env_prefixes
+    tfadmin add aws_region <new_region_name>
+    tfadmin add aws_profile <new_profile_name>
+    tfadmin add res_class <new_res_class_name>
+    tfadmin add deploy_env_prefix <new_deploy_env_prefix_name>
+    tfadmin del aws_region <new_region_name>
+    tfadmin del aws_profile <profile_name>
+    tfadmin del res_class <res_class_name>
+    tfadmin del deploy_env_prefix <deploy_env_prefix_name>
+
+--help -h       show this
+--version -v    show current tfadmin version
+"""
+
+import sys
+import os
+import shutil
+
+import run_terraform as rt
+from blessings import Terminal
+from pprint import pprint
+from docopt import docopt
+
+term = Terminal()
+
+class Tfadmin():
+    def __init__(self, data):
+        """ Constructor """
+        self.vars_dir = "terraform/vars"
+        self.data = data
+        self.validation = rt.ValidationData(self.data, rt.validatation_data_filename)
+        self.vd = self.validation.data
+        self.check_args()
+
+    def check_args(self):
+        """ Process command line args """
+        args = self.data['args']
+
+        if args['list']:
+            if args['aws_profiles']:
+                self.list_entries('aws_profiles')
+            elif args['res_classes']:
+                self.list_entries('res_classes')
+            elif args['aws_regions']:
+                self.list_entries('aws_regions')
+            elif args['deploy_env_prefixes']:
+                self.list_entries('deploy_env_prefixes')
+
+        elif args['add']:
+            if args['aws_profile']:
+                self.add_aws_profile(args['<new_profile_name>'])
+            elif args['res_class']:
+                self.add_res_class(args['<new_res_class_name>'])
+            elif args['aws_region']:
+                self.add_to_list('aws_regions', args['<new_region_name>'])
+            elif args['deploy_env_prefix']:
+                self.add_to_list('deploy_env_prefixes', args['<new_deploy_env_prefix_name>'])
+
+        elif args['del']:
+            if args['aws_profile']:
+                self.del_aws_profile(args['<profile_name>'])
+            elif args['res_class']:
+                self.del_res_class(args['<res_class_name>'])
+            elif args['aws_region']:
+                self.del_from_list('aws_regions', args['<new_region_name>'])
+            elif args['deploy_env_prefix']:
+                self.del_from_list('deploy_env_prefixes', args['<deploy_env_prefix_name>'])
+
+    def list_entries(self, parent_key):
+        """ List all the entries of a given key in a hash """
+        for item in self.vd[parent_key]:
+            print >> sys.stderr, '  - ' + item
+
+    def add_to_list(self, parent_key, item):
+        """ Add an entry to a given key in the data hash """
+        if item not in self.vd[parent_key]:
+            self.vd[parent_key].append(item)
+            rt.status_line(message="added to {0}".format(parent_key), result_msg=item, result_bool=True)
+        else:
+            rt.status_line(message="already in {0}".format(parent_key), result_msg=item, result_bool=False)
+
+        self.validation.save_validation_data_to_yaml(self.vd, rt.validatation_data_filename)
+
+    def del_from_list(self, parent_key, item):
+        """ Delete an entry from a given key in the data hash """
+        if item in self.vd[parent_key]:
+            self.vd[parent_key].remove(item)
+            rt.status_line(message="deleted from {0}".format(parent_key), result_msg=item, result_bool=True)
+        else:
+            rt.status_line(message="already deleted from {0}".format(parent_key), result_msg=item, result_bool=False)
+
+        self.validation.save_validation_data_to_yaml(self.vd, rt.validatation_data_filename)
+
+    def add_aws_profile(self, aws_profile):
+        """ Add an aws_profile """
+        self.add_to_list('aws_profiles', aws_profile)
+        rt.ensure_dir("terraform/vars/{0}".format(aws_profile))
+
+    def del_aws_profile(self, aws_profile):
+        """ Delete an aws_profile """
+        self.del_from_list('aws_profiles', aws_profile)
+        dst_path = "terraform/vars/{0}".format(aws_profile)
+        if rt.check_exists('dir', dst_path, False):
+            rt.remove_dir(dst_path)
+
+    def add_res_class(self, res_class):
+        """ Add a res_class """
+        self.add_to_list('res_classes', res_class)
+        src_path = "terraform/res_classes/.templates/{0}".format(res_class)
+        misc_src_path = "terraform/res_classes/.templates/misc"
+        dst_path = "terraform/res_classes/{0}".format(res_class)
+        vars_filename = "{0}.tfvars".format(res_class)
+
+        if rt.check_exists('dir', dst_path, False):
+            rt.status_line(message="res_class {0} already exists".format(res_class), result_msg=dst_path, result_bool=False)
+        elif rt.check_exists('dir', src_path, False):
+            shutil.copytree(src_path, dst_path)
+            rt.status_line(message="created directory {0} from template".format(res_class), result_msg=dst_path, result_bool=True)
+        else:
+            shutil.copytree(misc_src_path, dst_path)
+            rt.status_line(message="created directory {0} from misc template".format(res_class), result_msg=dst_path, result_bool=True)
+
+        for vf in os.listdir(self.vars_dir):
+            if os.path.isdir(os.path.join(self.vars_dir, vf)) and vf in self.vd['aws_profiles']:
+                dest_pathname = os.path.join(self.vars_dir, vf, vars_filename)
+                if not rt.check_exists('file', dest_pathname, False):
+                    with open(dest_pathname, "w") as f:
+                        f.write("")
+                    rt.status_line(message="created tfvars file {0}".format(res_class), result_msg=dest_pathname, result_bool=True)
+
+    def del_res_class(self, res_class):
+        """ Delete a res_class """
+        dst_path = "terraform/res_classes/{0}".format(res_class)
+        vars_filename = "{0}.tfvars".format(res_class)
+
+        if rt.check_exists('dir', dst_path, False):
+            self.del_from_list('res_classes', res_class)
+            rt.remove_dir("terraform/res_classes/{0}".format(res_class))
+            rt.status_line(message="res_class {0} deleted".format(res_class), result_msg=dst_path, result_bool=False)
+
+        for vf in os.listdir(self.vars_dir):
+            if os.path.isdir(os.path.join(self.vars_dir, vf)):
+                dest_pathname = os.path.join(self.vars_dir, vf, vars_filename)
+                if rt.check_exists('file', dest_pathname, False):
+                    os.remove(dest_pathname)
+                    rt.status_line(message="delete tfvars file {0}".format(res_class), result_msg=dest_pathname, result_bool=True)
+
+# Main: The program starts here
+if __name__ == '__main__':
+    config = rt.ConfigData(rt.config_data_filename)
+    config.data['args'] = docopt(__doc__, argv=None, help=True, version='tfadmin v0.0.1')
+    Tfadmin(config.data)

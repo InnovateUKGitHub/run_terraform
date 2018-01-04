@@ -1,0 +1,9 @@
+# {{ managed }}
+#
+# Configure Terraform backend
+#
+bucket         = "{{ aws_profile  }}-{{ bucket_suffix }}"
+key            = "{{ deploy_env|default(aws_profile) }}-{{ res_class }}.tfstate"
+region         = "{{ aws_region }}"
+encrypt        = {{ encrypt_state }}
+dynamodb_table = "{{ table_name|default('terraform_locks') }}"

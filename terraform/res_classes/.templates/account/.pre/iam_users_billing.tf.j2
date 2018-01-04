@@ -1,0 +1,25 @@
+# {{ terraform_template.managed }}
+
+resource "aws_iam_group" "billing" {
+  count = "${length(var.iam_billing_group_members) >0 ? 1 : 0}"
+  name  = "BillingAccess"
+  path  = "/"
+}
+
+resource "aws_iam_group_membership" "billing_membership" {
+  count      = "${length(var.iam_billing_group_members) >0 ? 1 : 0}"
+  name       = "billing-group-membership"
+  users      = "${var.iam_billing_group_members}"
+  group      = "${aws_iam_group.billing.name}"
+  depends_on = [{% for iam_user in tfvars.iam_billing_group_members %}
+                 "aws_iam_user.{{ iam_user |md5 }}",{% endfor %}
+  ]
+}
+
+resource "aws_iam_policy_attachment" "BillingAccess" {
+  count  = "${length(var.iam_billing_group_members) >0 ? 1 : 0}"
+  name   = "BillingAccess"
+  groups = ["${aws_iam_group.billing.name}"]
+
+  policy_arn = "arn:aws:iam::aws:policy/job-function/Billing"
+}

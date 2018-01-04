@@ -1,0 +1,23 @@
+# {{ terraform_template.managed }}
+
+resource "aws_iam_group" "admins" {
+  name = "Admins"
+  path = "/"
+}
+
+resource "aws_iam_group_membership" "admin_membership" {
+  count      = "${length(var.iam_admin_group_members) >0 ? 1 : 0}"
+  name       = "${var.aws_profile}-admin-group-membership"
+  users      = "${var.iam_admin_group_members}"
+  group      = "${aws_iam_group.admins.name}"
+  depends_on = [{% for iam_user in tfvars.iam_users %}
+                 "aws_iam_user.{{ iam_user |md5 }}",{% endfor %}
+  ]
+}
+
+resource "aws_iam_policy_attachment" "AdministratorAccess" {
+  count      = "${length(var.iam_admin_group_members) >0 ? 1 : 0}"
+  name       = "AdministratorAccess"
+  groups     = ["${aws_iam_group.admins.name}"]
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}

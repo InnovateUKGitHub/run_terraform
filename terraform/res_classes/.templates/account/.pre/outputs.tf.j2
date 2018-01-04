@@ -1,0 +1,22 @@
+# {{ terraform_template.managed }}
+
+{% for iam_user in tfvars.iam_users %}
+#### Outputs for IAM user {{ iam_user }}
+
+output "password_for_{{ iam_user |md5 }}" {
+  sensitive = true
+  value     = "${aws_iam_user_login_profile.{{ iam_user |md5 }}.encrypted_password}"
+}
+
+output "aws_iam_access_key_for_{{ iam_user |md5 }}" {
+  sensitive = true
+  value     = "${base64encode(aws_iam_access_key.{{ iam_user |md5 }}.id)}"
+}
+
+output "aws_iam_access_secret_key_for_{{ iam_user |md5 }}" {
+  sensitive = true
+  value     = "${base64encode(aws_iam_access_key.{{ iam_user |md5 }}.secret)}"
+}
+
+####
+{% endfor %}

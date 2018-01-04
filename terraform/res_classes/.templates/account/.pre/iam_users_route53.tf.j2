@@ -1,0 +1,25 @@
+# {{ terraform_template.managed }}
+
+resource "aws_iam_group" "route53" {
+  count = "${length(var.iam_route53_group_members) >0 ? 1 : 0}"
+  name  = "Route53Admins"
+  path  = "/"
+}
+
+resource "aws_iam_group_membership" "route53_membership" {
+  count      = "${length(var.iam_route53_group_members) >0 ? 1 : 0}"
+  name       = "route53-group-membership"
+  users      = "${var.iam_route53_group_members}"
+  group      = "${aws_iam_group.route53.name}"
+  depends_on = [{% for iam_user in tfvars.iam_route53_group_members %}
+                 "aws_iam_user.{{ iam_user |md5 }}",{% endfor %}
+  ]
+}
+
+resource "aws_iam_policy_attachment" "Route53Access" {
+  count  = "${length(var.iam_route53_group_members) >0 ? 1 : 0}"
+  name   = "Route53Access"
+  groups = ["${aws_iam_group.route53.name}"]
+
+  policy_arn = "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
+}
