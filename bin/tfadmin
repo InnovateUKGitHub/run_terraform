@@ -140,9 +140,9 @@ class Tfadmin():
         """ Delete a res_class """
         dst_path = "terraform/res_classes/{0}".format(res_class)
         vars_filename = "{0}.tfvars".format(res_class)
+        self.del_from_list('res_classes', res_class)
 
         if rt.check_exists('dir', dst_path, False):
-            self.del_from_list('res_classes', res_class)
             rt.remove_dir("terraform/res_classes/{0}".format(res_class))
             rt.status_line(message="res_class {0} deleted".format(res_class), result_msg=dst_path, result_bool=False)
 
