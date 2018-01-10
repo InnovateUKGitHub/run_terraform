@@ -35,7 +35,7 @@ A wrapper script for [Hashicorp's `terraform`](https://www.terraform.io) written
   ready for you to populate in order to override variable defaults where required
 - has directory structure to encourage the use of terraform modules which can be vendored into
   `./terraform/modules/ours` for your home-grown modules, or into `./terraform/modules/theirs` for those you may wish
-  to vendor from the elsewhere (maybe the [terraform registry](https://registry.terraform.io))
+  to vendor from elsewhere (maybe the [terraform registry](https://registry.terraform.io))
 - enforces not only a specific version of terraform, but also the name of the executable to easily support having
   multiple terraform binaries on the same machine
 
@@ -87,7 +87,7 @@ Usage:
 --version -v    show current tfadmin version
 ```
 
-> :bulb: Note at the top of the output you can see that `tfamin` referred to the config file
+> :bulb: Note at the top of the output you can see that `tfadmin` referred to the config file
 > `etc/run_terraform_config.yml`.  This file can be customised manually to affect how `tfadmin` and `run_terraform`
 > behave.  A future enhancement may be the configuration of `./etc/run_terraform_config.yml` via `tfadmin` too, but in
 > this release the file must be edited manually if required.
@@ -131,7 +131,7 @@ $ bin/tfadmin del aws_profile ${org_id}junk
 #### Maintaining RES_CLASSes
 
 The `tfadmin` tool can be used to maintain RES_CLASSes.  It will maintain the `res_classes` key in
-`./etc/run_terraform_validation.yml`, directory structures for user-defined variables in `./vars`.  It will also
+`./etc/run_terraform_validation.yml` and directory structures for user-defined variables in `./vars`.  It will also
 create a copy of the template res_class of the same name from `/terraform/res_classes/.templates/<res_class>`.  Should
 a template of the same name not exist, then a copy of the `misc` template will be used instead.
 
@@ -443,4 +443,4 @@ $ AWS_PROFILE=${org_id}dev AWS_REGION=eu-west-2 RES_CLASS=mgmt DEPLOY_ENV=mgmt-0
 ### Contributing
 
 Please contribute to this project and help us make `run_terraform` a better framework.  Simply fork the repo and submit
-PRs in the usually manner.
+PRs in the usual manner.
