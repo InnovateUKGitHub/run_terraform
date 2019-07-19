@@ -114,9 +114,9 @@ class Tfadmin():
     def add_res_class(self, res_class):
         """ Add a res_class """
         self.add_to_list('res_classes', res_class)
-        src_path = "terraform/res_classes/.templates/{0}".format(res_class)
-        misc_src_path = "terraform/res_classes/.templates/misc"
-        dst_path = "terraform/res_classes/{0}".format(res_class)
+        src_path = "{1}/.templates/{0}".format(res_class, config.data['terraform']['res_class_base_directory'])
+        misc_src_path = "{0}/.templates/misc".format(config.data['terraform']['res_class_base_directory'])
+        dst_path = "{1}/{0}".format(res_class, config.data['terraform']['res_class_base_directory'])
         vars_filename = "{0}.tfvars".format(res_class)
 
         if rt.check_exists('dir', dst_path, False):
@@ -138,12 +138,12 @@ class Tfadmin():
 
     def del_res_class(self, res_class):
         """ Delete a res_class """
-        dst_path = "terraform/res_classes/{0}".format(res_class)
+        dst_path = "{1}/{0}".format(res_class, config.data['terraform']['res_class_base_directory'])
         vars_filename = "{0}.tfvars".format(res_class)
         self.del_from_list('res_classes', res_class)
 
         if rt.check_exists('dir', dst_path, False):
-            rt.remove_dir("terraform/res_classes/{0}".format(res_class))
+            rt.remove_dir("{1}/{0}".format(res_class, config.data['terraform']['res_class_base_directory']))
             rt.status_line(message="res_class {0} deleted".format(res_class), result_msg=dst_path, result_bool=False)
 
         for vf in os.listdir(self.vars_dir):
