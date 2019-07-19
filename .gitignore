@@ -16,3 +16,4 @@ terraform/vars/backend/
 .project
 .pydevproject
 .idea/**
+.vscode/
