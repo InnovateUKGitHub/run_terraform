@@ -19,7 +19,7 @@ jmespath==0.9.3
 lxml==4.2.3
 MarkupSafe==1.0
 ndg-httpsclient==0.5.0
-paramiko==2.4.1
+paramiko==2.10.1
 passlib==1.7.1
 pkg-resources==0.0.0
 ply==3.10
